@@ -34,6 +34,13 @@ int main(int argc, char **argv) {
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
                 char op;
 
+                // define temporizador de 1 segundo
+                struct timeval timeout;
+                timeout.tv_sec = 1;
+                timeout.tv_usec = 0;
+
+                setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
+
                 // mensagem recebida
                 if (recv(c, &op, 1, MSG_WAITALL) == 1) {
                     char buffer[BUFSZ];
@@ -66,10 +73,13 @@ int main(int argc, char **argv) {
                             counter = new_value;
                             printf("%d\n", counter);
                         }
-
-                        close(c);
                     }
+                } else {
+                    // servidor temporizou
+                    printf("T\n");
                 }
+
+                close(c);
             }
         }
     }
