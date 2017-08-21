@@ -8,7 +8,10 @@
 #define BUFSZ 64
 
 int main(int argc, char **argv) {
+
+    // valor do contador global
     int counter = 0;
+
     int s = socket(AF_INET, SOCK_STREAM, 0);
 
     if (s != -1) {
@@ -30,6 +33,7 @@ int main(int argc, char **argv) {
             listen(s, 5);
             socklen_t client_length = sizeof(client);
 
+            // a combinacao ctrl+c termina a execucao
             // cada iteracao do while representa uma nova conexao de cliente
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
                 char op;
@@ -79,6 +83,7 @@ int main(int argc, char **argv) {
                     printf("T\n");
                 }
 
+                // fecha a conexao com o cliente
                 close(c);
             }
         }
