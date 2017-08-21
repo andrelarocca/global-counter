@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
             listen(s, 5);
             socklen_t client_length = sizeof(client);
 
+            // a combinacao ctrl+c termina a execucao
             // cada iteracao do while representa uma nova conexao de cliente
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
                 char op;
