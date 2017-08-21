@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include <sys/socket.h>
@@ -33,17 +32,18 @@ int main(int argc, char **argv) {
 
             // cada iteracao do while representa uma nova conexao de cliente
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
-                char op, buffer[BUFSZ];
+                char op;
 
                 // mensagem recebida
                 if (recv(c, &op, 1, MSG_WAITALL) == 1) {
-                    int new_value = 0;
+                    char buffer[BUFSZ];
+                    int new_value = counter;
 
                     // verifica o operador recebido e calcula o novo valor
                     if (op == '+') {
-                        new_value = counter + 1;
+                        new_value += 1;
                     } else if (op == '-') {
-                        new_value = counter - 1;
+                        new_value -= 1;
                     }
 
                     // calcula modulo do novo valor - somente valores entre 0 e 999
@@ -53,22 +53,22 @@ int main(int argc, char **argv) {
                         new_value += 1000;
                     }
 
+                    // envia o novo valor para o cliente
                     uint32_t validator = htonl(new_value);
-                    snprintf(buffer, BUFSZ, "%03d", validator);
+                    send(c, &validator, 4, 0);
 
-                    send(c, buffer, 4, 0);
-//
-//                    if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
-//                        printf("recebeu");
-//                        uint32_t valid = ntohl(*(uint32_t *)buffer);
-//
-//                        if (valid == new_value) {
-//                            counter = new_value;
-//                            printf("%d\n", counter);
-//                        }
-//
-//                        close(c);
-//                    }
+                    // recebe confirmacao do cliente
+                    if (recv(c, buffer, 3, MSG_WAITALL) == 3) {
+                        snprintf(buffer, BUFSZ, "%3s", buffer);
+
+                        // valida confirmacao e persiste novo valor
+                        if (atoi(buffer) == new_value) {
+                            counter = new_value;
+                            printf("%d\n", counter);
+                        }
+
+                        close(c);
+                    }
                 }
             }
         }

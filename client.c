@@ -38,10 +38,9 @@ int main(int argc, char **argv)
     char buf[BUFSZ];
     if(4 != recv(s, buf, 4, MSG_WAITALL)) logexit("recv");
     uint32_t counter = ntohl(*(uint32_t *)buf);
-    printf("counter: %d\n", counter);
-//    snprintf(buf, BUFSZ, "%03d", counter);
-//    send(s, buf, 3, 0);
-//    printf("%d\n", counter);
+    snprintf(buf, BUFSZ, "%03d", counter);
+    send(s, buf, 3, 0);
+    printf("%d\n", counter);
 
     close(s);
     exit(EXIT_SUCCESS);
