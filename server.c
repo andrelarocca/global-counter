@@ -1,16 +1,80 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
 #define BUFSZ 64
 
-int main(int argc, char **argv) {
+void logexit (const char *str) {
+    if (errno) {
+        perror(str);
+    } else {
+        puts(str);
+    }
 
-    // valor do contador global
-    int counter = 0;
+    exit(EXIT_FAILURE);
+}
+
+void unceaser (char *str, int size, int key) {
+    for (int i = 0; i < size; i++) {
+        str[i] = str[i] - key;
+
+        if (str[i] < 97) {
+            str[i] = str[i] + 26;
+        }
+    }
+}
+
+void *client_thread (void *param) {
+	struct conn_data *data = param;
+	int c = *(int*)param;
+
+    // define temporizador de 15 segundos
+    struct timeval timeout;
+    timeout.tv_sec = 15;
+    timeout.tv_usec = 0;
+
+    setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
+
+    char buffer[BUFSZ];
+    char message[BUFSZ];
+
+    // tamanho da mensagem recebido
+    if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
+        uint32_t string_size = ntohl(*(uint32_t *)buffer);
+
+        // recebe mensagem do cliente
+        if (recv(c, message, string_size, MSG_WAITALL) == string_size) {
+
+            // recebe mensagem codificada
+            if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
+                uint32_t ceasars_cypher_key = ntohl(*(uint32_t *)buffer);
+
+                // decodifica mensagem e envia de volta ao cliente
+                unceaser(message, string_size, ceasars_cypher_key);
+                send(c, message, string_size, 0);
+
+                // imprime a mensagem na saída padrão
+                message[string_size] = '\0';
+                printf("%s\n", message);
+                fflush(stdout);
+            }
+        }
+    }
+
+    // termina a conexão com o cliente
+	close(c);
+	pthread_exit(EXIT_SUCCESS);
+}
+
+int main (int argc, char **argv) {
+    if (argc < 2) {
+        logexit("missing port param");
+    }
 
     int s = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -21,7 +85,7 @@ int main(int argc, char **argv) {
 
         struct sockaddr_in client, dst = {
             .sin_family = AF_INET,
-            .sin_port = htons(51515),
+            .sin_port = htons(atoi(argv[1])),
             .sin_addr = addr
         };
 
@@ -36,59 +100,14 @@ int main(int argc, char **argv) {
             // a combinacao ctrl+c termina a execucao
             // cada iteracao do while representa uma nova conexao de cliente
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
-                char op;
-
-                // define temporizador de 1 segundo
-                struct timeval timeout;
-                timeout.tv_sec = 1;
-                timeout.tv_usec = 0;
-
-                setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
-
-                // mensagem recebida
-                if (recv(c, &op, 1, MSG_WAITALL) == 1) {
-                    char buffer[BUFSZ];
-                    int new_value = counter;
-
-                    // verifica o operador recebido e calcula o novo valor
-                    if (op == '+') {
-                        new_value += 1;
-                    } else if (op == '-') {
-                        new_value -= 1;
-                    }
-
-                    // calcula modulo do novo valor - somente valores entre 0 e 999
-                    new_value = new_value % 1000;
-
-                    if (new_value < 0) {
-                        new_value += 1000;
-                    }
-
-                    // envia o novo valor para o cliente
-                    uint32_t validator = htonl(new_value);
-                    send(c, &validator, 4, 0);
-
-                    // recebe confirmacao do cliente
-                    if (recv(c, buffer, 3, MSG_WAITALL) == 3) {
-                        snprintf(buffer, BUFSZ, "%3s", buffer);
-
-                        // valida confirmacao e persiste novo valor
-                        if (atoi(buffer) == new_value) {
-                            counter = new_value;
-                            printf("%d\n", counter);
-                        }
-                    }
-                } else {
-                    // servidor temporizou
-                    printf("T\n");
-                }
-
-                // fecha a conexao com o cliente
-                close(c);
+                // cria a thread para executar conexão de cliente
+                pthread_t tid;
+                pthread_create(&tid, NULL, client_thread, &c);
             }
         }
     }
 
+    // termina o servidor
     close(s);
-    return 0;
+    exit(EXIT_SUCCESS);
 }

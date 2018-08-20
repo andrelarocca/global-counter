@@ -2,3 +2,8 @@ cmake-build-debug
 CMakeLists.txt
 .idea
 *.out
+.vscode
+.vscode/*
+client
+server
+server.txt

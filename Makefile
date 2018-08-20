@@ -1,8 +1,8 @@
 all:
-	gcc server.c -o server.out
-	gcc client.c -o client.out
+	gcc -pthread server.c -o server
+	gcc -pthread client.c -o client
 
 run:
-	gcc server.c -o server.out
-	gcc client.c -o client.out
-	./server.out
+	gcc -pthread server.c -o server
+	gcc -pthread client.c -o client
+	./server
