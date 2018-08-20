@@ -45,18 +45,19 @@ int main (int argc, char **argv) {
         logexit("connect");
     }
 
-    send(s, argv[3], strlen(argv[3]), 0);
-    send(s, argv[4], 1, 0);
-    char buf[BUFSZ];
+    uint32_t string_size = htonl(atoi(argv[4]));
+    send(s, &string_size, 4, 0);
+    // send(s, argv[3], strlen(argv[3]), 0);
+    // char buf[BUFSZ];
 
-    if (recv(s, buf, 4, MSG_WAITALL) != 4) {
-        logexit("recv");
-    }
+    // if (recv(s, buf, 4, MSG_WAITALL) != 4) {
+    //     logexit("recv\n");
+    // }
 
-    uint32_t counter = ntohl(*(uint32_t *)buf);
-    snprintf(buf, BUFSZ, "%03d", counter);
-    send(s, buf, 3, 0);
-    printf("%d\n", counter);
+    // uint32_t counter = ntohl(*(uint32_t *)buf);
+    // snprintf(buf, BUFSZ, "%03d", counter);
+    // send(s, buf, 3, 0);
+    // printf("%d\n", counter);
 
     close(s);
     exit(EXIT_SUCCESS);
