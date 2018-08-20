@@ -19,6 +19,16 @@ void logexit (const char *str) {
     exit(EXIT_FAILURE);
 }
 
+void ceaser (char *str, int size, int key) {
+    for (int i = 0; i < size; i++) {
+        str[i] = str[i] + key;
+
+        if (str[i] > 122) {
+            str[i] -= 122;
+        }
+    }
+}
+
 char *clear_string(char *str, int size) {
     printf("string: %lu ou %d\n", strlen(str), size);
     char *buffer;
@@ -61,18 +71,20 @@ int main (int argc, char **argv) {
     char buffer[BUFSZ];
     int string_size = strlen(argv[3]);
     uint32_t string_size_network = htonl(string_size);
-    uint32_t ceasars_cypher_key = htonl(atoi(argv[4]));
+    int ceasars_cypher_key = atoi(argv[4]);
+    uint32_t ceasars_cypher_key_network = htonl(ceasars_cypher_key);
 
     // envia o tamanho da mensagem para o servidor
     send(s, &string_size_network, 4, 0);
 
-    // envia a mensagem para o servidor
+    // codifica e envia a mensagem para o servidor
+    ceaser(argv[3], string_size, ceasars_cypher_key);
     send(s, argv[3], string_size, 0);
 
     // envia o valor de X para o servidor
-    send(s, &ceasars_cypher_key, 4, 0);
+    send(s, &ceasars_cypher_key_network, 4, 0);
 
-    // recebe mensagem decodificada
+    // recebe e imprime mensagem decodificada
     if (recv(s, buffer, string_size, MSG_WAITALL) == string_size) {
         buffer[string_size] = '\0';
         printf("%s\n", buffer);
