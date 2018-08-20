@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -7,10 +8,20 @@
 
 #define BUFSZ 64
 
-int main(int argc, char **argv) {
+void logexit(const char *str) {
+    if (errno) {
+        perror(str);
+    } else {
+        puts(str);
+    }
 
-    // valor do contador global
-    int counter = 0;
+    exit(EXIT_FAILURE);
+}
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        logexit("missing port param");
+    }
 
     int s = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -21,7 +32,7 @@ int main(int argc, char **argv) {
 
         struct sockaddr_in client, dst = {
             .sin_family = AF_INET,
-            .sin_port = htons(51515),
+            .sin_port = htons(atoi(argv[1])),
             .sin_addr = addr
         };
 
@@ -36,47 +47,37 @@ int main(int argc, char **argv) {
             // a combinacao ctrl+c termina a execucao
             // cada iteracao do while representa uma nova conexao de cliente
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
-                char op;
+                int string_size;
 
-                // define temporizador de 1 segundo
+                // define temporizador de 15 segundos
                 struct timeval timeout;
-                timeout.tv_sec = 1;
+                timeout.tv_sec = 15;
                 timeout.tv_usec = 0;
 
                 setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
 
                 // mensagem recebida
-                if (recv(c, &op, 1, MSG_WAITALL) == 1) {
+                if (recv(c, &string_size, 1, MSG_WAITALL) == 1) {
                     char buffer[BUFSZ];
-                    int new_value = counter;
-
-                    // verifica o operador recebido e calcula o novo valor
-                    if (op == '+') {
-                        new_value += 1;
-                    } else if (op == '-') {
-                        new_value -= 1;
-                    }
-
-                    // calcula modulo do novo valor - somente valores entre 0 e 999
-                    new_value = new_value % 1000;
-
-                    if (new_value < 0) {
-                        new_value += 1000;
-                    }
 
                     // envia o novo valor para o cliente
-                    uint32_t validator = htonl(new_value);
-                    send(c, &validator, 4, 0);
+                    // uint32_t validator = htonl(new_value);
+                    // send(c, &validator, 4, 0);
 
                     // recebe confirmacao do cliente
-                    if (recv(c, buffer, 3, MSG_WAITALL) == 3) {
-                        snprintf(buffer, BUFSZ, "%3s", buffer);
+                    if (recv(c, buffer, string_size, MSG_WAITALL) == string_size) {
+                        int decoder_key;
+                        snprintf(buffer, BUFSZ, "%s", buffer);
+
+                        if (recv(c, &decoder_key, 1, MSG_WAITALL) == 1) {
+                            printf("%d\n", decoder_key);
+                        }
 
                         // valida confirmacao e persiste novo valor
-                        if (atoi(buffer) == new_value) {
-                            counter = new_value;
-                            printf("%d\n", counter);
-                        }
+                        // if (atoi(buffer) == new_value) {
+                        //     counter = new_value;
+                        //     printf("%d\n", counter);
+                        // }
                     }
                 } else {
                     // servidor temporizou
