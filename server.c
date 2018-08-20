@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -26,6 +27,48 @@ void unceaser (char *str, int size, int key) {
             str[i] += 97;
         }
     }
+}
+
+void *client_thread (void *param) {
+	struct conn_data *data = param;
+	int c = *(int*)param;
+
+    // define temporizador de 15 segundos
+    struct timeval timeout;
+    timeout.tv_sec = 15;
+    timeout.tv_usec = 0;
+
+    setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
+
+    char buffer[BUFSZ];
+    char message[BUFSZ];
+
+    // tamanho da mensagem recebido
+    if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
+        uint32_t string_size = ntohl(*(uint32_t *)buffer);
+
+        // recebe mensagem do cliente
+        if (recv(c, message, string_size, MSG_WAITALL) == string_size) {
+            snprintf(message, BUFSZ, "%s", message);
+
+            // recebe mensagem codificada
+            if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
+                uint32_t ceasars_cypher_key = ntohl(*(uint32_t *)buffer);
+
+                // decodifica mensagem e envia de volta ao cliente
+                unceaser(message, string_size, ceasars_cypher_key);
+                send(c, message, string_size, 0);
+
+                // imprime a mensagem na saída padrão
+                message[string_size] = '\0';
+                printf("%s\n", message);
+            }
+        }
+    }
+
+    // termina a conexão com o cliente
+	close(c);
+	pthread_exit(EXIT_SUCCESS);
 }
 
 int main (int argc, char **argv) {
@@ -57,49 +100,14 @@ int main (int argc, char **argv) {
             // a combinacao ctrl+c termina a execucao
             // cada iteracao do while representa uma nova conexao de cliente
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
-                char buffer[BUFSZ];
-                char message[BUFSZ];
-
-                // define temporizador de 15 segundos
-                struct timeval timeout;
-                timeout.tv_sec = 15;
-                timeout.tv_usec = 0;
-
-                setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
-
-                // tamanho da mensagem recebido
-                if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
-                    uint32_t string_size = ntohl(*(uint32_t *)buffer);
-
-                    // recebe mensagem do cliente
-                    if (recv(c, message, string_size, MSG_WAITALL) == string_size) {
-                        snprintf(message, BUFSZ, "%s", message);
-
-                        // recebe mensagem codificada
-                        if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
-                            uint32_t ceasars_cypher_key = ntohl(*(uint32_t *)buffer);
-
-                            // decodifica mensagem e envia de volta ao cliente
-                            unceaser(message, string_size, ceasars_cypher_key);
-                            send(c, message, string_size, 0);
-
-                            // imprime a mensagem na saída padrão
-                            message[string_size] = '\0';
-                            printf("%s\n", message);
-                        }
-                    }
-                } else {
-                    // servidor temporizou
-                    printf("T\n");
-                }
-
-                // fecha a conexao com o cliente
-                close(c);
+                // cria a thread para executar conexão de cliente
+                pthread_t tid;
+                pthread_create(&tid, NULL, client_thread, &c);
             }
         }
     }
 
     // termina o servidor
     close(s);
-    return 0;
+    exit(EXIT_SUCCESS);
 }
