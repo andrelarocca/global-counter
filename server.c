@@ -88,9 +88,6 @@ int main (int argc, char **argv) {
                             printf("%s\n", message);
                         }
                     }
-                } else {
-                    // servidor temporizou
-                    printf("T\n");
                 }
 
                 // fecha a conexao com o cliente

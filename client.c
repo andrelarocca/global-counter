@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -30,7 +31,6 @@ void ceaser (char *str, int size, int key) {
 }
 
 char *clear_string(char *str, int size) {
-    printf("string: %lu ou %d\n", strlen(str), size);
     char *buffer;
     buffer = (char*)malloc(size * sizeof(char));
 
@@ -38,7 +38,6 @@ char *clear_string(char *str, int size) {
         buffer[i] = str[i];
     }
 
-    printf("buffer: %lu ou %d\n", strlen(buffer), size);
     return buffer;
 }
 
