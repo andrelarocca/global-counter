@@ -8,7 +8,7 @@
 
 #define BUFSZ 64
 
-void logexit(const char *str) {
+void logexit (const char *str) {
     if (errno) {
         perror(str);
     } else {
@@ -18,7 +18,11 @@ void logexit(const char *str) {
     exit(EXIT_FAILURE);
 }
 
-int main(int argc, char **argv) {
+void unceaser (char *str, int key) {
+    printf("unceaser %s com %d", str, key);
+}
+
+int main (int argc, char **argv) {
     if (argc < 2) {
         logexit("missing port param");
     }
@@ -47,7 +51,8 @@ int main(int argc, char **argv) {
             // a combinacao ctrl+c termina a execucao
             // cada iteracao do while representa uma nova conexao de cliente
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
-                int string_size;
+                char buffer[BUFSZ];
+                char message[BUFSZ];
 
                 // define temporizador de 15 segundos
                 struct timeval timeout;
@@ -56,28 +61,22 @@ int main(int argc, char **argv) {
 
                 setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
 
-                // mensagem recebida
-                if (recv(c, &string_size, 1, MSG_WAITALL) == 1) {
-                    char buffer[BUFSZ];
+                // tamanho da mensagem recebido
+                if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
+                    uint32_t string_size = ntohl(*(uint32_t *)buffer);
 
-                    // envia o novo valor para o cliente
-                    // uint32_t validator = htonl(new_value);
-                    // send(c, &validator, 4, 0);
+                    // recebe mensagem do cliente
+                    if (recv(c, message, string_size, MSG_WAITALL) == string_size) {
+                        snprintf(message, BUFSZ, "%s", message);
 
-                    // recebe confirmacao do cliente
-                    if (recv(c, buffer, string_size, MSG_WAITALL) == string_size) {
-                        int decoder_key;
-                        snprintf(buffer, BUFSZ, "%s", buffer);
+                        // recebe mensagem codificada
+                        if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
+                            uint32_t ceasars_cypher_key = ntohl(*(uint32_t *)buffer);
 
-                        if (recv(c, &decoder_key, 1, MSG_WAITALL) == 1) {
-                            printf("%d\n", decoder_key);
+                            // decodifica mensagem e envia de volta ao cliente
+                            unceaser(message, ceasars_cypher_key);
+                            send(c, message, string_size, 0);
                         }
-
-                        // valida confirmacao e persiste novo valor
-                        // if (atoi(buffer) == new_value) {
-                        //     counter = new_value;
-                        //     printf("%d\n", counter);
-                        // }
                     }
                 } else {
                     // servidor temporizou
@@ -90,6 +89,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    // termina o servidor
     close(s);
     return 0;
 }
