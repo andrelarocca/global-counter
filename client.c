@@ -66,6 +66,13 @@ int main (int argc, char **argv) {
         logexit("connect");
     }
 
+    // define temporizador de 15 segundos
+    struct timeval timeout;
+    timeout.tv_sec = 15;
+    timeout.tv_usec = 0;
+
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
+
     char buffer[BUFSZ];
     int string_size = strlen(argv[3]);
     uint32_t string_size_network = htonl(string_size);
