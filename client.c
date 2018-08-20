@@ -21,11 +21,8 @@ void logexit (const char *str) {
 
 void ceaser (char *str, int size, int key) {
     for (int i = 0; i < size; i++) {
-        str[i] = str[i] + key;
-
-        if (str[i] > 122) {
-            str[i] -= 122;
-        }
+        int new_char = (str[i] + key) % 97;
+        str[i] = (char)new_char;
     }
 }
 
