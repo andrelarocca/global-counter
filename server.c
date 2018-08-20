@@ -18,8 +18,14 @@ void logexit (const char *str) {
     exit(EXIT_FAILURE);
 }
 
-void unceaser (char *str, int key) {
-    printf("unceaser %s com %d", str, key);
+void unceaser (char *str, int size, int key) {
+    for (int i = 0; i < size; i++) {
+        str[i] = str[i] - key;
+
+        if (str[i] < 97) {
+            str[i] += 97;
+        }
+    }
 }
 
 int main (int argc, char **argv) {
@@ -74,8 +80,12 @@ int main (int argc, char **argv) {
                             uint32_t ceasars_cypher_key = ntohl(*(uint32_t *)buffer);
 
                             // decodifica mensagem e envia de volta ao cliente
-                            unceaser(message, ceasars_cypher_key);
+                            unceaser(message, string_size, ceasars_cypher_key);
                             send(c, message, string_size, 0);
+
+                            // imprime a mensagem na saída padrão
+                            message[string_size] = '\0';
+                            printf("%s\n", message);
                         }
                     }
                 } else {
