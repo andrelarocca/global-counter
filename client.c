@@ -19,6 +19,19 @@ void logexit (const char *str) {
     exit(EXIT_FAILURE);
 }
 
+char *clear_string(char *str, int size) {
+    printf("string: %lu ou %d\n", strlen(str), size);
+    char *buffer;
+    buffer = (char*)malloc(size * sizeof(char));
+
+    for (int i = 0; str[i] != '\0'; i++) {
+        buffer[i] = str[i];
+    }
+
+    printf("buffer: %lu ou %d\n", strlen(buffer), size);
+    return buffer;
+}
+
 int main (int argc, char **argv) {
     if (argc < 5) {
         logexit("missing params");
@@ -61,7 +74,7 @@ int main (int argc, char **argv) {
 
     // recebe mensagem decodificada
     if (recv(s, buffer, string_size, MSG_WAITALL) == string_size) {
-        snprintf(buffer, BUFSZ, "%s", buffer);
+        buffer[string_size] = '\0';
         printf("%s\n", buffer);
     }
 
