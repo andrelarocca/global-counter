@@ -24,7 +24,7 @@ void unceaser (char *str, int size, int key) {
         str[i] = str[i] - key;
 
         if (str[i] < 97) {
-            str[i] += 97;
+            str[i] = str[i] + 26;
         }
     }
 }
@@ -49,7 +49,6 @@ void *client_thread (void *param) {
 
         // recebe mensagem do cliente
         if (recv(c, message, string_size, MSG_WAITALL) == string_size) {
-            snprintf(message, BUFSZ, "%s", message);
 
             // recebe mensagem codificada
             if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
@@ -62,6 +61,7 @@ void *client_thread (void *param) {
                 // imprime a mensagem na saída padrão
                 message[string_size] = '\0';
                 printf("%s\n", message);
+                fflush(stdout);
             }
         }
     }

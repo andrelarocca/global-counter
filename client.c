@@ -21,8 +21,11 @@ void logexit (const char *str) {
 
 void ceaser (char *str, int size, int key) {
     for (int i = 0; i < size; i++) {
-        int new_char = (str[i] + key) % 97;
-        str[i] = (char)new_char;
+        str[i] = str[i] + key;
+
+        if (str[i] > 122) {
+            str[i] = str[i] - 26;
+        }
     }
 }
 
@@ -83,6 +86,7 @@ int main (int argc, char **argv) {
     if (recv(s, buffer, string_size, MSG_WAITALL) == string_size) {
         buffer[string_size] = '\0';
         printf("%s\n", buffer);
+        fflush(stdout);
     }
 
     close(s);

@@ -4,3 +4,6 @@ CMakeLists.txt
 *.out
 .vscode
 .vscode/*
+client
+server
+server.txt
