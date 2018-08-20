@@ -56,17 +56,15 @@ int main (int argc, char **argv) {
 
                 setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout));
 
-                // mensagem recebida
+                // tamanho da mensagem recebido
                 if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
                     uint32_t string_size = ntohl(*(uint32_t *)buffer);
                     printf("string_size: %d\n", string_size);
 
-                    // envia o novo valor para o cliente
-                    // uint32_t validator = htonl(new_value);
-                    // send(c, &validator, 4, 0);
-
-                    // recebe confirmacao do cliente
-                    // if (recv(c, buffer, string_size, MSG_WAITALL) == string_size) {
+                    // recebe mensagem do cliente
+                    if (recv(c, buffer, string_size, MSG_WAITALL) == string_size) {
+                        snprintf(buffer, BUFSZ, "%s", buffer);
+                        printf("message: %s\n", buffer);
                     //     int decoder_key;
                     //     snprintf(buffer, BUFSZ, "%s", buffer);
 
@@ -79,7 +77,7 @@ int main (int argc, char **argv) {
                     //     //     counter = new_value;
                     //     //     printf("%d\n", counter);
                     //     // }
-                    // }
+                    }
                 } else {
                     // servidor temporizou
                     printf("T\n");

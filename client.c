@@ -45,9 +45,14 @@ int main (int argc, char **argv) {
         logexit("connect");
     }
 
-    uint32_t string_size = htonl(atoi(argv[4]));
-    send(s, &string_size, 4, 0);
-    // send(s, argv[3], strlen(argv[3]), 0);
+    int string_size = atoi(argv[4]);
+    uint32_t string_size_network = htonl(string_size);
+
+    // envia o tamanho da mensagem para o servidor
+    send(s, &string_size_network, 4, 0);
+
+    // envia a mensagem para o servidor
+    send(s, argv[3], string_size, 0);
     // char buf[BUFSZ];
 
     // if (recv(s, buf, 4, MSG_WAITALL) != 4) {
