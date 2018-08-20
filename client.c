@@ -45,6 +45,7 @@ int main (int argc, char **argv) {
         logexit("connect");
     }
 
+    char buffer[BUFSZ];
     int string_size = strlen(argv[3]);
     uint32_t string_size_network = htonl(string_size);
     uint32_t ceasars_cypher_key = htonl(atoi(argv[4]));
@@ -58,16 +59,11 @@ int main (int argc, char **argv) {
     // envia o valor de X para o servidor
     send(s, &ceasars_cypher_key, 4, 0);
 
-    // char buf[BUFSZ];
-
-    // if (recv(s, buf, 4, MSG_WAITALL) != 4) {
-    //     logexit("recv\n");
-    // }
-
-    // uint32_t counter = ntohl(*(uint32_t *)buf);
-    // snprintf(buf, BUFSZ, "%03d", counter);
-    // send(s, buf, 3, 0);
-    // printf("%d\n", counter);
+    // recebe mensagem decodificada
+    if (recv(s, buffer, string_size, MSG_WAITALL) == string_size) {
+        snprintf(buffer, BUFSZ, "%s", buffer);
+        printf("%s\n", buffer);
+    }
 
     close(s);
     exit(EXIT_SUCCESS);

@@ -18,6 +18,10 @@ void logexit (const char *str) {
     exit(EXIT_FAILURE);
 }
 
+void unceaser (char *str, int key) {
+    printf("unceaser %s com %d", str, key);
+}
+
 int main (int argc, char **argv) {
     if (argc < 2) {
         logexit("missing port param");
@@ -48,6 +52,7 @@ int main (int argc, char **argv) {
             // cada iteracao do while representa uma nova conexao de cliente
             while ((c = accept(s, (struct sockaddr*) &client,  &client_length)) >= 0) {
                 char buffer[BUFSZ];
+                char message[BUFSZ];
 
                 // define temporizador de 15 segundos
                 struct timeval timeout;
@@ -59,16 +64,18 @@ int main (int argc, char **argv) {
                 // tamanho da mensagem recebido
                 if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
                     uint32_t string_size = ntohl(*(uint32_t *)buffer);
-                    printf("string_size: %d\n", string_size);
 
                     // recebe mensagem do cliente
-                    if (recv(c, buffer, string_size, MSG_WAITALL) == string_size) {
-                        snprintf(buffer, BUFSZ, "%s", buffer);
-                        printf("message: %s\n", buffer);
+                    if (recv(c, message, string_size, MSG_WAITALL) == string_size) {
+                        snprintf(message, BUFSZ, "%s", message);
 
+                        // recebe mensagem codificada
                         if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
                             uint32_t ceasars_cypher_key = ntohl(*(uint32_t *)buffer);
-                            printf("ceasars_cypher_key: %d\n", ceasars_cypher_key);
+
+                            // decodifica mensagem e envia de volta ao cliente
+                            unceaser(message, ceasars_cypher_key);
+                            send(c, message, string_size, 0);
                         }
                     }
                 } else {
@@ -82,6 +89,7 @@ int main (int argc, char **argv) {
         }
     }
 
+    // termina o servidor
     close(s);
     return 0;
 }
