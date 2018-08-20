@@ -45,14 +45,19 @@ int main (int argc, char **argv) {
         logexit("connect");
     }
 
-    int string_size = atoi(argv[4]);
+    int string_size = strlen(argv[3]);
     uint32_t string_size_network = htonl(string_size);
+    uint32_t ceasars_cypher_key = htonl(atoi(argv[4]));
 
     // envia o tamanho da mensagem para o servidor
     send(s, &string_size_network, 4, 0);
 
     // envia a mensagem para o servidor
     send(s, argv[3], string_size, 0);
+
+    // envia o valor de X para o servidor
+    send(s, &ceasars_cypher_key, 4, 0);
+
     // char buf[BUFSZ];
 
     // if (recv(s, buf, 4, MSG_WAITALL) != 4) {

@@ -65,18 +65,11 @@ int main (int argc, char **argv) {
                     if (recv(c, buffer, string_size, MSG_WAITALL) == string_size) {
                         snprintf(buffer, BUFSZ, "%s", buffer);
                         printf("message: %s\n", buffer);
-                    //     int decoder_key;
-                    //     snprintf(buffer, BUFSZ, "%s", buffer);
 
-                    //     if (recv(c, &decoder_key, 1, MSG_WAITALL) == 1) {
-                    //         printf("%d\n", decoder_key);
-                    //     }
-
-                    //     // valida confirmacao e persiste novo valor
-                    //     // if (atoi(buffer) == new_value) {
-                    //     //     counter = new_value;
-                    //     //     printf("%d\n", counter);
-                    //     // }
+                        if (recv(c, buffer, 4, MSG_WAITALL) == 4) {
+                            uint32_t ceasars_cypher_key = ntohl(*(uint32_t *)buffer);
+                            printf("ceasars_cypher_key: %d\n", ceasars_cypher_key);
+                        }
                     }
                 } else {
                     // servidor temporizou
